@@ -136,7 +136,7 @@ mod message_signing {
             msg_hash: sha256d::Hash,
         ) -> Result<PublicKey, MessageSignatureError> {
             let msg = secp256k1::Message::from_digest(msg_hash.to_byte_array());
-            let pubkey = secp_ctx.recover_ecdsa(&msg, &self.signature)?;
+            let pubkey = secp_ctx.recover_ecdsa(msg, &self.signature)?;
             Ok(PublicKey { inner: pubkey, compressed: self.compressed })
         }
 
