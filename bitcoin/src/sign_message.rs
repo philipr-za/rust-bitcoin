@@ -101,7 +101,7 @@ mod message_signing {
             let (recid, raw) = self.signature.serialize_compact();
             let mut serialized = [0u8; 65];
             serialized[0] = 27;
-            serialized[0] += i32::from(recid) as u8;
+            serialized[0] += u8::from(recid);
             if self.compressed {
                 serialized[0] += 4;
             }
@@ -132,11 +132,11 @@ mod message_signing {
         /// To get the message hash from a message, use [super::signed_msg_hash].
         pub fn recover_pubkey<C: secp256k1::Verification>(
             &self,
-            secp_ctx: &secp256k1::Secp256k1<C>,
+            _secp_ctx: &secp256k1::Secp256k1<C>,
             msg_hash: sha256d::Hash,
         ) -> Result<PublicKey, MessageSignatureError> {
             let msg = secp256k1::Message::from_digest(msg_hash.to_byte_array());
-            let pubkey = secp_ctx.recover_ecdsa(msg, &self.signature)?;
+            let pubkey = self.signature.recover_ecdsa(msg)?;
             Ok(PublicKey { inner: pubkey, compressed: self.compressed })
         }
 

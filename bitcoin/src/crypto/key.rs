@@ -206,7 +206,7 @@ impl PublicKey {
         msg: &secp256k1::Message,
         sig: &ecdsa::Signature,
     ) -> Result<(), secp256k1::Error> {
-        secp.verify_ecdsa(*msg, &sig.signature, &self.inner)
+        secp.verify_ecdsa(&sig.signature, *msg , &self.inner)
     }
 }
 
@@ -339,7 +339,7 @@ impl CompressedPublicKey {
         msg: &secp256k1::Message,
         sig: &ecdsa::Signature,
     ) -> Result<(), secp256k1::Error> {
-        Ok(secp.verify_ecdsa(*msg, &sig.signature, &self.0)?)
+        Ok(secp.verify_ecdsa(&sig.signature, *msg, &self.0)?)
     }
 }
 
@@ -443,7 +443,9 @@ impl PrivateKey {
         data: &[u8],
         network: impl Into<NetworkKind>,
     ) -> Result<PrivateKey, secp256k1::Error> {
-        Ok(PrivateKey::new(secp256k1::SecretKey::from_slice(data)?, network))
+	    let mut sk_bytes = [0u8; 32];
+	    sk_bytes.copy_from_slice(&data);
+        Ok(PrivateKey::new(secp256k1::SecretKey::from_secret_bytes(sk_bytes)?, network))
     }
 
     /// Format the private key to WIF format.
@@ -489,11 +491,14 @@ impl PrivateKey {
                 return Err(InvalidAddressVersionError { invalid }.into());
             }
         };
-
+	    
+	    let mut sk_bytes = [0u8; 32];
+	    sk_bytes.copy_from_slice(&data[1..33]);
+	    
         Ok(PrivateKey {
             compressed,
             network,
-            inner: secp256k1::SecretKey::from_slice(&data[1..33])?,
+            inner: secp256k1::SecretKey::from_secret_bytes(sk_bytes)?,
         })
     }
 }
