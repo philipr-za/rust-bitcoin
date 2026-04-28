@@ -1157,7 +1157,7 @@ impl ControlBlock {
     /// verification must also execute the script with witness data.
     pub fn verify_taproot_commitment<C: secp256k1::Verification>(
         &self,
-        secp: &Secp256k1<C>,
+        _secp: &Secp256k1<C>,
         output_key: XOnlyPublicKey,
         script: &Script,
     ) -> bool {
@@ -1172,7 +1172,7 @@ impl ControlBlock {
         // compute the taptweak
         let tweak =
             TapTweakHash::from_key_and_tweak(self.internal_key, Some(curr_hash)).to_scalar();
-        self.internal_key.tweak_add_check(secp, &output_key, self.output_key_parity, tweak)
+        self.internal_key.tweak_add_check(&output_key, self.output_key_parity, tweak)
     }
 }
 

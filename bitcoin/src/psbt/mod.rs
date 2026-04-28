@@ -383,7 +383,7 @@ impl Psbt {
             };
 
             let sig = ecdsa::Signature {
-                signature: secp.sign_ecdsa(&msg, &sk.inner),
+                signature: secp.sign_ecdsa(msg, &sk.inner),
                 sighash_type: sighash_ty,
             };
 
@@ -444,14 +444,14 @@ impl Psbt {
                 // According to BIP 371, we also need to consider the condition leaf_hashes.is_empty() for a more accurate determination.
                 if internal_key == xonly && leaf_hashes.is_empty() && input.tap_key_sig.is_none() {
                     let (msg, sighash_type) = self.sighash_taproot(input_index, cache, None)?;
-                    let key_pair = Keypair::from_secret_key(secp, &sk.inner)
+                    let key_pair = Keypair::from_secret_key(&sk.inner)
                         .tap_tweak(secp, input.tap_merkle_root)
                         .to_keypair();
 
                     #[cfg(feature = "rand-std")]
                     let signature = secp.sign_schnorr(&msg, &key_pair);
                     #[cfg(not(feature = "rand-std"))]
-                    let signature = secp.sign_schnorr_no_aux_rand(&msg, &key_pair);
+                    let signature = secp.sign_schnorr_no_aux_rand(msg.as_ref(), &key_pair);
 
                     let signature = taproot::Signature { signature, sighash_type };
                     input.tap_key_sig = Some(signature);
@@ -469,7 +469,7 @@ impl Psbt {
                     .collect::<Vec<_>>();
 
                 if !leaf_hashes.is_empty() {
-                    let key_pair = Keypair::from_secret_key(secp, &sk.inner);
+                    let key_pair = Keypair::from_secret_key(&sk.inner);
 
                     for lh in leaf_hashes {
                         let (msg, sighash_type) =
@@ -478,7 +478,7 @@ impl Psbt {
                         #[cfg(feature = "rand-std")]
                         let signature = secp.sign_schnorr(&msg, &key_pair);
                         #[cfg(not(feature = "rand-std"))]
-                        let signature = secp.sign_schnorr_no_aux_rand(&msg, &key_pair);
+                        let signature = secp.sign_schnorr_no_aux_rand(msg.as_ref(), &key_pair);
 
                         let signature = taproot::Signature { signature, sighash_type };
                         input.tap_script_sigs.insert((xonly, lh), signature);

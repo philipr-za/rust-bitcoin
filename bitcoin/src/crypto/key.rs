@@ -206,7 +206,7 @@ impl PublicKey {
         msg: &secp256k1::Message,
         sig: &ecdsa::Signature,
     ) -> Result<(), secp256k1::Error> {
-        secp.verify_ecdsa(msg, &sig.signature, &self.inner)
+        secp.verify_ecdsa(*msg, &sig.signature, &self.inner)
     }
 }
 
@@ -339,7 +339,7 @@ impl CompressedPublicKey {
         msg: &secp256k1::Message,
         sig: &ecdsa::Signature,
     ) -> Result<(), secp256k1::Error> {
-        Ok(secp.verify_ecdsa(msg, &sig.signature, &self.0)?)
+        Ok(secp.verify_ecdsa(*msg, &sig.signature, &self.0)?)
     }
 }
 
@@ -428,10 +428,10 @@ impl PrivateKey {
     }
 
     /// Creates a public key from this private key
-    pub fn public_key<C: secp256k1::Signing>(&self, secp: &Secp256k1<C>) -> PublicKey {
+    pub fn public_key<C: secp256k1::Signing>(&self, _secp: &Secp256k1<C>) -> PublicKey {
         PublicKey {
             compressed: self.compressed,
-            inner: secp256k1::PublicKey::from_secret_key(secp, &self.inner),
+            inner: secp256k1::PublicKey::from_secret_key(&self.inner),
         }
     }
 
@@ -443,7 +443,9 @@ impl PrivateKey {
         data: &[u8],
         network: impl Into<NetworkKind>,
     ) -> Result<PrivateKey, secp256k1::Error> {
-        Ok(PrivateKey::new(secp256k1::SecretKey::from_slice(data)?, network))
+        let mut sk_bytes = [0u8; 32];
+        sk_bytes.copy_from_slice(&data[..32]);
+        Ok(PrivateKey::new(secp256k1::SecretKey::from_secret_bytes(sk_bytes)?, network))
     }
 
     /// Format the private key to WIF format.
@@ -489,11 +491,12 @@ impl PrivateKey {
                 return Err(InvalidAddressVersionError { invalid }.into());
             }
         };
-
+        let mut sk_bytes = [0u8; 32];
+        sk_bytes.copy_from_slice(&data[1..33]);
         Ok(PrivateKey {
             compressed,
             network,
-            inner: secp256k1::SecretKey::from_slice(&data[1..33])?,
+            inner: secp256k1::SecretKey::from_secret_bytes(sk_bytes)?,
         })
     }
 
@@ -792,13 +795,13 @@ impl TapTweak for UntweakedPublicKey {
     /// The tweaked key and its parity.
     fn tap_tweak<C: Verification>(
         self,
-        secp: &Secp256k1<C>,
+        _secp: &Secp256k1<C>,
         merkle_root: Option<TapNodeHash>,
     ) -> (TweakedPublicKey, Parity) {
         let tweak = TapTweakHash::from_key_and_tweak(self, merkle_root).to_scalar();
-        let (output_key, parity) = self.add_tweak(secp, &tweak).expect("Tap tweak failed");
+        let (output_key, parity) = self.add_tweak(&tweak).expect("Tap tweak failed");
 
-        debug_assert!(self.tweak_add_check(secp, &output_key, parity, tweak));
+        debug_assert!(self.tweak_add_check(&output_key, parity, tweak));
         (TweakedPublicKey(output_key), parity)
     }
 
@@ -825,12 +828,12 @@ impl TapTweak for UntweakedKeypair {
     /// The tweaked key and its parity.
     fn tap_tweak<C: Verification>(
         self,
-        secp: &Secp256k1<C>,
+        _secp: &Secp256k1<C>,
         merkle_root: Option<TapNodeHash>,
     ) -> TweakedKeypair {
         let (pubkey, _parity) = XOnlyPublicKey::from_keypair(&self);
         let tweak = TapTweakHash::from_key_and_tweak(pubkey, merkle_root).to_scalar();
-        let tweaked = self.add_xonly_tweak(secp, &tweak).expect("Tap tweak failed");
+        let tweaked = self.add_xonly_tweak(&tweak).expect("Tap tweak failed");
         TweakedKeypair(tweaked)
     }
 
