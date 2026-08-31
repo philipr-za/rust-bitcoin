@@ -3,7 +3,7 @@ name = "bitcoin"
 # We jumped to `v0.32.100` when doing the MSRV bump to Rust `1.74`
 # leaving room for a bunch of secuity releases upto this number if
 # needed.
-version = "0.32.102"
+version = "0.32.200"
 authors = ["Andrew Poelstra <apoelstra@wpsoftware.net>"]
 license = "CC0-1.0"
 repository = "https://github.com/rust-bitcoin/rust-bitcoin/"
@@ -19,7 +19,7 @@ exclude = ["api", "tests", "contrib"]
 [features]
 default = [ "std", "secp-recovery" ]
 std = ["base58/std", "bech32/std", "hashes/std", "hex/std", "io/std", "secp256k1/std", "units/std"]
-rand-std = ["secp256k1/rand-std", "std"]
+rand-std = ["std", "rand"]
 rand = ["secp256k1/rand"]
 serde = ["actual-serde", "hashes/serde", "secp256k1/serde", "units/serde"]
 # Raises the MSRV to 1.74.0.
@@ -40,7 +40,7 @@ hashes = { package = "bitcoin_hashes", path = "../hashes", version = "0.14.101",
 hex = { package = "hex-conservative", version = "0.2.2", default-features = false, features = ["alloc"] }
 hex_lit = "0.1.1"
 io = { package = "bitcoin-io", path = "../io", version = "0.1.101", default-features = false, features = ["alloc"] }
-secp256k1 = { version = "0.29.0", default-features = false, features = ["hashes", "alloc"] }
+secp256k1 = { version = "0.33.1", default-features = false, features = ["alloc"] }
 units = { package = "bitcoin-units", path = "../units", version = "0.1.101", default-features = false, features = ["alloc"] }
 
 base64 = { version = "0.21.3", optional = true }
